@@ -1,0 +1,16 @@
+[
+  {
+    "name": "openzeppelin-contracts",
+    "url": "https://github.com/OpenZeppelin/openzeppelin-contracts.git",
+    "local_path": "data/openzeppelin-contracts",
+    "last_updated": "2025-03-26T12:02:20.959951",
+    "update_frequency_hours": 24
+  },
+  {
+    "name": "uniswap-v2-core",
+    "url": "https://github.com/Uniswap/v4-core.git",
+    "local_path": "data/uniswap-v4-core",
+    "last_updated": "2025-03-26T12:02:21.437325",
+    "update_frequency_hours": 24
+  }
+]
