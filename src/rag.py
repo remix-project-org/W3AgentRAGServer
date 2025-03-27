@@ -42,9 +42,7 @@ class IntegratedRAGSystem:
             self.knowledge_base = []
             
             for repo_config in self.repo_manager.repos_config:
-                repo_documents = self.repo_manager.extract_text_from_repository(
-                    repo_config['local_path']
-                )
+                repo_documents = self.repo_manager.extract_text_from_repository(repo_config['local_path'])
                 
                 for doc in repo_documents:
                     self.knowledge_base.append({
@@ -52,7 +50,9 @@ class IntegratedRAGSystem:
                         'content': self.preprocess_text(doc['content'])
                     })
             
+            print("Knowledge base computing embeddings...")
             self.knowledge_embeddings = self.compute_knowledge_embeddings()
+            print(f"Knowledge base refreshed. Total documents: {len(self.knowledge_base)}")
             
             self.logger.info(f"Knowledge base refreshed. Total documents: {len(self.knowledge_base)}")
         
