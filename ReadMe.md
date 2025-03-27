@@ -27,7 +27,7 @@ curl -X POST http://localhost:6789/repositories \
      -d '{
          "name": "hardhat",
          "url": "https://github.com/NomicFoundation/hardhat.git",
-         "local_path": "data_sources/hardhat",
+         "local_path": "data/hardhat",
          "update_frequency_hours": 24
      }'
 ```
