@@ -5,7 +5,6 @@ import git
 import requests
 from typing import List, Dict, Any
 import numpy as np
-from sentence_transformers import SentenceTransformer
 import subprocess
 import time
 from datetime import datetime, timedelta
@@ -14,8 +13,7 @@ import logging
 class GitHubRepositoryManager:
     def __init__(self, 
                  data_dir: str = './data',
-                 config_path: str = './repo_config.json',
-                 embedding_model: str = 'all-MiniLM-L6-v2'):
+                 config_path: str = './repo_config.json'):
         """
         Initialize GitHub Repository Manager
         
@@ -31,11 +29,8 @@ class GitHubRepositoryManager:
         self.config_path = os.path.abspath(config_path)
         os.makedirs(self.data_dir, exist_ok=True)
         
-        self.embedding_model = SentenceTransformer(embedding_model)
-        
         self.repos_config = self.load_or_create_repo_config()
         
-        # Embedding cache directory
         self.embedding_cache_dir = os.path.join(self.data_dir, 'embeddings')
         os.makedirs(self.embedding_cache_dir, exist_ok=True)
     
@@ -121,39 +116,34 @@ class GitHubRepositoryManager:
         
         return documents
     
-    def compute_repository_embeddings(self, repo_config: Dict[str, Any]) -> np.ndarray:
-        # Generate embedding cache filename
+    def compute_repository_embeddings(self, repo_config: Dict[str, Any], embedding_model) -> np.ndarray:
         embedding_cache_file = os.path.join(
             self.embedding_cache_dir, 
             f"{repo_config['name']}_embeddings.npy"
         )
         
-        # Check if cache exists and is recent
         if os.path.exists(embedding_cache_file):
-            # You might want to add additional checks here, like checking file age
             return np.load(embedding_cache_file)
         
-        # Extract documents
         documents = self.extract_text_from_repository(repo_config['local_path'])
         
-        # Compute embeddings
-        embeddings = self.embedding_model.encode([
+        embeddings = embedding_model.encode([
             doc['content'] for doc in documents
-        ])
+            ], 
+            show_progress_bar=False
+        )
         
-        # Save embeddings to cache
         np.save(embedding_cache_file, embeddings)
-        
         return embeddings
     
-    def update_repositories(self):
+    def update_repositories(self, embedding_model):
         updated_repos = []
         
         for repo_config in self.repos_config:
             # Update repository
             if self.clone_or_update_repository(repo_config):
                 # Recompute embeddings if updated
-                self.compute_repository_embeddings(repo_config)
+                self.compute_repository_embeddings(repo_config, embedding_model)
                 
                 # Update last updated timestamp
                 repo_config['last_updated'] = datetime.now().isoformat()
@@ -172,8 +162,8 @@ class GitHubRepositoryManager:
         :param interval_hours: Hours between update checks
         """
         while True:
-            self.update_repositories()
             time.sleep(interval_hours * 3600)  # Convert hours to seconds
+            self.update_repositories()
 
 def main():
     # Create repository manager

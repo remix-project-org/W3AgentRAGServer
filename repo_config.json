@@ -17,6 +17,7 @@
     "name": "hardhat",
     "url": "https://github.com/NomicFoundation/hardhat.git",
     "local_path": "data_sources/hardhat",
+    "last_updated": "2025-03-26T12:02:21.437325",
     "update_frequency_hours": 24
   }
 ]

@@ -61,6 +61,7 @@ def get_knowledge_base():
     })
 
 def main():
+    print("Starting Integrated RAG System API Server...")
     app.run(host='0.0.0.0', port=6789, debug=True)
 
 if __name__ == '__main__':

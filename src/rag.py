@@ -25,8 +25,7 @@ class IntegratedRAGSystem:
         self.logger = logging.getLogger(__name__)
         
         self.repo_manager = GitHubRepositoryManager(
-            data_dir=data_dir, 
-            embedding_model=embedding_model
+            data_dir=data_dir
         )
         
         self.embedding_model = SentenceTransformer(embedding_model)
@@ -50,10 +49,7 @@ class IntegratedRAGSystem:
                         'content': self.preprocess_text(doc['content'])
                     })
             
-            print("Knowledge base computing embeddings...")
             self.knowledge_embeddings = self.compute_knowledge_embeddings()
-            print(f"Knowledge base refreshed. Total documents: {len(self.knowledge_base)}")
-            
             self.logger.info(f"Knowledge base refreshed. Total documents: {len(self.knowledge_base)}")
         
         except Exception as e:
@@ -81,7 +77,7 @@ class IntegratedRAGSystem:
             return np.array([])
         
         return np.array([
-            self.embedding_model.encode(entry['content']) 
+            self.embedding_model.encode(entry['content'], show_progress_bar=False) 
             for entry in self.knowledge_base
         ])
     
@@ -131,7 +127,8 @@ class IntegratedRAGSystem:
         def update_routine():
             while True:
                 try:
-                    updated_repos = self.repo_manager.update_repositories()
+                    time.sleep(interval_hours * 3600)
+                    updated_repos = self.repo_manager.update_repositories(self.embedding_model)
                     if updated_repos:
                         self.logger.info(f"Repositories updated: {updated_repos}")
                         self.refresh_knowledge_base()
@@ -139,7 +136,6 @@ class IntegratedRAGSystem:
                 except Exception as e:
                     self.logger.error(f"Error in update routine: {e}")
                 
-                time.sleep(interval_hours * 3600)
         
         update_thread = threading.Thread(target=update_routine, daemon=True)
         update_thread.start()

@@ -6,6 +6,9 @@ Data for RAG is provided by the user either manualy or by using the data submiss
 
 ## Start the servers
 Intall the requirements with `pip install -r requirements.txt`
+```
+TOKENIZERS_PARALLELISM=false python main.py
+```
 
 ## Server endpoints
 
