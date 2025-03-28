@@ -108,7 +108,7 @@ class GitHubRepositoryManager:
                         with open(file_path, 'r', encoding='utf-8') as f:
                             content = f.read()
                             documents.append({
-                                'path': file_path,
+                                'path': os.path.relpath(file_path, self.data_dir),
                                 'content': content
                             })
                     except Exception as e:
