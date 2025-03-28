@@ -92,7 +92,7 @@ class IntegratedRAGSystem:
         if len(self.knowledge_base) == 0 or self.knowledge_embeddings is None:
             return []
         
-        query_embedding = self.embedding_model.encode(query)
+        query_embedding = self.embedding_model.encode(query, show_progress_bar=False)
         
         similarities = np.dot(self.knowledge_embeddings, query_embedding) / (
             np.linalg.norm(self.knowledge_embeddings, axis=1) * np.linalg.norm(query_embedding)
@@ -121,7 +121,7 @@ class IntegratedRAGSystem:
             for doc in retrieved_docs
         ])
         
-        return f"Based on your query about: '{query}', here are some relevant snippets:\n\n{context}"
+        return context
     
     def start_background_updates(self, interval_hours: int = 24):
         def update_routine():

@@ -16,7 +16,7 @@ TOKENIZERS_PARALLELISM=false python main.py
 Handles RAG query via HTTP POST request
 
 ```
-curl -X POST http://localhost:6789/query \
+curl -X POST http://localhost:7860/query \
      -H "Content-Type: application/json" \
      -d '{"query":"Write an ERC721 soulbound contract"}'
 ```
@@ -25,7 +25,7 @@ curl -X POST http://localhost:6789/query \
 `GET` Queries the current git data repository config or `POST` insert a new repository to be crawled and added to the knowledge base.
 
 ```
-curl -X POST http://localhost:6789/repositories \
+curl -X POST http://localhost:7860/repositories \
      -H "Content-Type: application/json" \
      -d '{
          "name": "hardhat",
@@ -36,7 +36,7 @@ curl -X POST http://localhost:6789/repositories \
 ```
 
 ```
-curl -X GET http://localhost:6789/repositories \
+curl -X GET http://localhost:7860/repositories \
      -H "Content-Type: application/json"
 ```
 
@@ -44,6 +44,6 @@ curl -X GET http://localhost:6789/repositories \
 ### `knowledge_base`
 Get the number of documents in the knowledge base. 
 ```
-curl -X GET http://localhost:6789/knowledge_base \
+curl -X GET http://localhost:7860/knowledge_base \
      -H "Content-Type: application/json" 
 ```
