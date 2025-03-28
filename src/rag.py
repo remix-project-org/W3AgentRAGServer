@@ -32,6 +32,7 @@ class IntegratedRAGSystem:
         self.knowledge_base = []
         self.knowledge_embeddings = None
         
+        self.repo_manager.update_repositories(self.embedding_model)
         self.refresh_knowledge_base()
         
         self.start_background_updates(update_interval_hours)
