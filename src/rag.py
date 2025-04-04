@@ -103,7 +103,9 @@ class IntegratedRAGSystem:
         threshold = 0.5  # Define a similarity threshold
         thr_top_indices = [i for i in similarities.argsort()[::-1] if similarities[i] >= threshold][:top_k]
         print(f"Thresholded top indices: {thr_top_indices}")
-        
+        # print the similarities scores for the thresholded top indices
+        print(f"Similarities: {similarities[thr_top_indices]}")
+
         return [self.knowledge_base[i] for i in top_indices]
     
     def generate_response(self, query: str, retrieved_docs: List[Dict[str, Any]]) -> str:
