@@ -100,8 +100,9 @@ class IntegratedRAGSystem:
         )
         
         top_indices = similarities.argsort()[-top_k:][::-1]
-        # threshold = 0.5  # Define a similarity threshold
-        # top_indices = [i for i in similarities.argsort()[::-1] if similarities[i] >= threshold][:top_k]
+        threshold = 0.5  # Define a similarity threshold
+        thr_top_indices = [i for i in similarities.argsort()[::-1] if similarities[i] >= threshold][:top_k]
+        print(f"Thresholded top indices: {thr_top_indices}")
         
         return [self.knowledge_base[i] for i in top_indices]
     

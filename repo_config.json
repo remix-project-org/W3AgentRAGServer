@@ -3,21 +3,21 @@
     "name": "openzeppelin-contracts",
     "url": "https://github.com/OpenZeppelin/openzeppelin-contracts.git",
     "local_path": "data/openzeppelin-contracts",
-    "last_updated": "2025-03-28T13:30:05.409933",
+    "last_updated": "2025-04-04T10:33:03.583722",
     "update_frequency_hours": 24
   },
   {
     "name": "uniswap-v4-core",
     "url": "https://github.com/Uniswap/v4-core.git",
     "local_path": "data/uniswap-v4-core",
-    "last_updated": "2025-03-28T13:30:12.646295",
+    "last_updated": "2025-04-04T10:33:04.233829",
     "update_frequency_hours": 24
   },
   {
     "name": "hardhat",
     "url": "https://github.com/NomicFoundation/hardhat.git",
     "local_path": "data/hardhat",
-    "last_updated": "2025-03-27T13:30:05.409933",
+    "last_updated": "2025-04-04T10:33:05.067643",
     "update_frequency_hours": 24
   }
 ]
