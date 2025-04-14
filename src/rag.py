@@ -100,7 +100,7 @@ class IntegratedRAGSystem:
         )
         
         top_indices = similarities.argsort()[-top_k:][::-1]
-        threshold = 0.2  # Define a similarity threshold
+        threshold = 0.5  # Define a similarity threshold
         thr_top_indices = [i for i in similarities.argsort()[::-1] if similarities[i] >= threshold][:top_k]
         # print(f"Thresholded top indices: {thr_top_indices}")
         # print(f"Similarities thresholded: {similarities[thr_top_indices]}")
@@ -108,7 +108,7 @@ class IntegratedRAGSystem:
         # print(f"Similarities: {similarities[top_indices]}")
 
         # get too 100
-        top100_indices = similarities.argsort()[-100:][::-1]
+        top100_indices = similarities.argsort()[-30:][::-1]
         filenames = [self.knowledge_base[i]['source'] for i in top100_indices]
 
         # check if any filename ends with .md and prind index and similarity
