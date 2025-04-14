@@ -99,7 +99,7 @@ class GitHubRepositoryManager:
     def extract_text_from_repository(self, repo_path: str) -> List[Dict[str, str]]:
         documents = []
         
-        text_extensions = ['.sol', '.md', '.txt']
+        text_extensions = ['.sol', '.md', '.txt', '.adoc']
         for root, _, files in os.walk(repo_path):
             for file in files:
                 if any(file.endswith(ext) for ext in text_extensions):
