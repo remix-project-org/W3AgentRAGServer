@@ -114,7 +114,7 @@ class IntegratedRAGSystem:
         # check if any filename ends with .md and prind index and similarity
         for i in range(len(filenames)):
             print(f"Filename: {filenames[i]}, Index: {top100_indices[i]}, Similarity: {similarities[top100_indices[i]]}")
-            if filenames[i].endswith('log.md'):
+            if filenames[i].endswith('LOG.md'):
                 #print(f"############## --------->Filename: {filenames[i]}, Index: {top100_indices[i]}, Similarity: {similarities[top100_indices[i]]}")
                 thr_top_indices.append(top100_indices[i])           
         
