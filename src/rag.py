@@ -100,8 +100,10 @@ class IntegratedRAGSystem:
         )
         
         top_indices = similarities.argsort()[-top_k:][::-1]
-        threshold = 0.5  # Define a similarity threshold
+        threshold = 0.4  # Define a similarity threshold
         thr_top_indices = [i for i in similarities.argsort()[::-1] if similarities[i] >= threshold][:top_k]
+        for i in thr_top_indices:
+            print (f"Filename: {self.knowledge_base[i]['source']}, Index: {i}, Similarity: {similarities[i]}")
         # print(f"Thresholded top indices: {thr_top_indices}")
         # print(f"Similarities thresholded: {similarities[thr_top_indices]}")
         # print(f"Top indices: {top_indices}")
@@ -118,7 +120,7 @@ class IntegratedRAGSystem:
                 thr_top_indices.append(top100_indices[i])           
         
         for i in thr_top_indices:
-            print (f"Filename: {self.knowledge_base[i]['source']}, Index: {i}, Similarity: {similarities[i]}")
+            print (f"ADDED: Filename: {self.knowledge_base[i]['source']}, Index: {i}, Similarity: {similarities[i]}")
         return [self.knowledge_base[i] for i in thr_top_indices]
     
     def generate_response(self, query: str, retrieved_docs: List[Dict[str, Any]]) -> str:
