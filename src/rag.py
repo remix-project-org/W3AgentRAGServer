@@ -100,7 +100,7 @@ class IntegratedRAGSystem:
         )
         
         top_indices = similarities.argsort()[-top_k:][::-1]
-        threshold = 0.4  # Define a similarity threshold
+        threshold = 0.2  # Define a similarity threshold
         thr_top_indices = [i for i in similarities.argsort()[::-1] if similarities[i] >= threshold][:top_k]
         for i in thr_top_indices:
             print (f"Filename: {self.knowledge_base[i]['source']}, Index: {i}, Similarity: {similarities[i]}")
