@@ -110,7 +110,7 @@ class IntegratedRAGSystem:
         # print(f"Similarities: {similarities[top_indices]}")
 
         # get too 100
-        top100_indices = similarities.argsort()[-1000:][::-1]
+        top100_indices = [i for i in similarities.argsort()[::-1] if similarities[i] >= threshold][:5] #similarities.argsort()[-1000:][::-1]
         filenames = [self.knowledge_base[i]['source'] for i in top100_indices]
 
         # check if any filename ends with .md and prind index and similarity
