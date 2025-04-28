@@ -56,7 +56,7 @@ class IntegratedRAGSystem:
         """
         Initialize the RetrievalQA chain using LangChain.
         """
-        retriever = self.vector_store.as_retriever(search_kwargs={"k": 4}) if self.vector_store else None
+        retriever = self.vector_store.as_retriever(search_kwargs={"k": 5}) if self.vector_store else None
         #llm = OpenAI(model="gpt-4-turbo")
         #return RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
         return retriever
@@ -81,7 +81,6 @@ class IntegratedRAGSystem:
             
             # Generate response based on retrieved documents
             response = [{"content": doc.page_content, "source": os.path.relpath(doc.metadata.get("source", ""), self.repo_manager.data_dir)} for doc in retrieved_docs]
-            print(f"Retrieved {retrieved_docs}")
             return response
         
         except Exception as e:
