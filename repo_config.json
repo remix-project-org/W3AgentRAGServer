@@ -3,21 +3,36 @@
     "name": "openzeppelin-contracts",
     "url": "https://github.com/OpenZeppelin/openzeppelin-contracts.git",
     "local_path": "data/openzeppelin-contracts",
-    "last_updated": "2025-04-06T08:17:17.796303",
+    "last_updated": "2025-04-28T09:18:54.309065",
     "update_frequency_hours": 24
   },
   {
     "name": "uniswap-v4-core",
     "url": "https://github.com/Uniswap/v4-core.git",
     "local_path": "data/uniswap-v4-core",
-    "last_updated": "2025-04-06T08:17:18.267315",
+    "last_updated": "2025-04-28T09:12:33.062720",
+    "release_tag": "v4.0.0",
     "update_frequency_hours": 24
   },
   {
     "name": "hardhat",
     "url": "https://github.com/NomicFoundation/hardhat.git",
     "local_path": "data/hardhat",
-    "last_updated": "2025-04-06T08:17:19.106110",
+    "last_updated": "2025-04-28T09:19:07.694087",
     "update_frequency_hours": 24
+  },
+  {
+    "name": "uniswapdocs",
+    "url": "https://github.com/Uniswap/docs.git",
+    "local_path": "data/uniswapdocs",
+    "update_frequency_hours": 24,
+    "last_updated": "2025-04-28T09:19:19.758029"
+  },
+  {
+    "name": "uniswaphooks",
+    "url": "https://github.com/ora-io/awesome-uniswap-hooks.git",
+    "local_path": "data/uniswaphooks",
+    "update_frequency_hours": 24,
+    "last_updated": "2025-04-28T09:19:33.837233"
   }
 ]

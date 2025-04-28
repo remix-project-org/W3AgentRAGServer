@@ -28,9 +28,9 @@ curl -X POST http://localhost:7860/query \
 curl -X POST http://localhost:7860/repositories \
      -H "Content-Type: application/json" \
      -d '{
-         "name": "hardhat",
-         "url": "https://github.com/NomicFoundation/hardhat.git",
-         "local_path": "data/hardhat",
+         "name": "uniswaphooks",
+         "url": "https://github.com/ora-io/awesome-uniswap-hooks.git",
+         "local_path": "data/uniswaphooks",
          "update_frequency_hours": 24
      }'
 ```

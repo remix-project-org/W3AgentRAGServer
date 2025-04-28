@@ -1,14 +1,24 @@
-import os
+import os, time
 import json
-import shutil
-import git
-import requests
-from typing import List, Dict, Any
-import numpy as np
-import subprocess
-import time
-from datetime import datetime, timedelta
 import logging
+from typing import List, Dict, Any
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
+from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from datetime import datetime
+from datetime import timedelta
+import git
+
+class EventDispatcher:
+    def __init__(self):
+        self.listeners = {}
+
+    def on(self, event_name, callback):
+        self.listeners.setdefault(event_name, []).append(callback)
+
+    def emit(self, event_name, *args, **kwargs):
+        for callback in self.listeners.get(event_name, []):
+            callback(*args, **kwargs)
 
 class GitHubRepositoryManager:
     def __init__(self, 
@@ -19,20 +29,19 @@ class GitHubRepositoryManager:
         
         :param data_dir: Directory to store repository data
         :param config_path: Path to repository configuration file
-        :param embedding_model: Embedding model to use
-        """
+                """
         logging.basicConfig(level=logging.INFO, 
                             format='%(asctime)s - %(levelname)s: %(message)s')
         self.logger = logging.getLogger(__name__)
         
+        self.dispatcher = EventDispatcher()
         self.data_dir = os.path.abspath(data_dir)
         self.config_path = os.path.abspath(config_path)
+        self.vector_store_path = os.path.join(data_dir, "vector_store")
         os.makedirs(self.data_dir, exist_ok=True)
         
         self.repos_config = self.load_or_create_repo_config()
-        
-        self.embedding_cache_dir = os.path.join(self.data_dir, 'embeddings')
-        os.makedirs(self.embedding_cache_dir, exist_ok=True)
+        self.update_repositories()
     
     def load_or_create_repo_config(self) -> List[Dict[str, Any]]:
         """
@@ -71,6 +80,12 @@ class GitHubRepositoryManager:
             if not os.path.exists(local_path):
                 self.logger.info(f"Cloning {repo_config['name']} to {local_path}")
                 git.Repo.clone_from(repo_config['url'], local_path)
+
+                if 'release_tag' in repo_config and repo_config['release_tag']:
+                    repo = git.Repo(local_path)
+                    repo.git.fetch('--tags')
+                    repo.git.checkout(repo_config['release_tag'])
+                    self.logger.info(f"Checked out release tag {repo_config['release_tag']} for {repo_config['name']}")
                 return True
             
             # Update existing repository
@@ -87,9 +102,18 @@ class GitHubRepositoryManager:
                     self.logger.info(f"Skipping update for {repo_config['name']} - not time yet")
                     return False
             
-            # Pull latest changes
-            origin.pull()
-            self.logger.info(f"Updated {repo_config['name']}")
+            # Pull latest changes or checkout release tag if specified
+            if repo_config.get('release_tag'):
+                if repo_config['release_tag'] not in repo.git.tag():
+                    origin.pull()
+                    self.logger.info(f"Release tag {repo_config['release_tag']} not found, pulling latest changes")
+                    return True
+                self.logger.info(f"Checking out release tag {repo_config['release_tag']} for {repo_config['name']}")
+                repo.git.fetch('--tags')
+                repo.git.checkout(repo_config['release_tag'])
+            else:
+                origin.pull()
+                self.logger.info(f"Updated {repo_config['name']}")
             return True
         
         except Exception as e:
@@ -98,8 +122,7 @@ class GitHubRepositoryManager:
     
     def extract_text_from_repository(self, repo_path: str) -> List[Dict[str, str]]:
         documents = []
-        
-        text_extensions = ['.sol', '.md', '.txt', '.adoc']
+        text_extensions = ['.mdx', '.md', '.txt', '.adoc']
         for root, _, files in os.walk(repo_path):
             for file in files:
                 if any(file.endswith(ext) for ext in text_extensions):
@@ -113,41 +136,49 @@ class GitHubRepositoryManager:
                             })
                     except Exception as e:
                         self.logger.warning(f"Could not read {file_path}: {e}")
-        
         return documents
-    
-    def compute_repository_embeddings(self, repo_config: Dict[str, Any], embedding_model) -> np.ndarray:
-        embedding_cache_file = os.path.join(
-            self.embedding_cache_dir, 
-            f"{repo_config['name']}_embeddings.npy"
-        )
         
-        if os.path.exists(embedding_cache_file):
-            return np.load(embedding_cache_file)
+    def build_vector_store(self) -> FAISS:
+        """
+        Build a FAISS vector .
+        """
+        print("################### build vector store with data path", self.data_dir)
+        extensions = ["mdx", "md", "txt", "adoc"]
+        documents = []
+
+        for ext in extensions:
+            print(f"Loading files with extension: {ext}")
+            loader = DirectoryLoader(
+                path=self.data_dir,
+                glob=f"**/*.{ext}",
+                loader_cls=TextLoader,
+                loader_kwargs={"encoding": "utf-8"},
+                show_progress=True,
+                recursive=True
+            )
+            documents.extend(loader.load())
+
+        self.logger.info(f"Loaded {len(documents)} documents from path {self.data_dir}")
         
-        documents = self.extract_text_from_repository(repo_config['local_path'])
+        embeddings = OpenAIEmbeddings()
+        import faiss
+        faiss.omp_set_num_threads(1)  # Optional: Limit FAISS to a single thread
+        vector_store = FAISS.from_documents(documents, embeddings)
         
-        embeddings = embedding_model.encode([
-            doc['content'] for doc in documents
-            ], 
-            show_progress_bar=False
-        )
-        
-        np.save(embedding_cache_file, embeddings)
-        return embeddings
-    
-    def update_repositories(self, embedding_model):
+        vector_store.save_local(self.vector_store_path)
+        self.dispatcher.emit("new_vector_store", vector_store)
+        return vector_store     
+   
+    def update_repositories(self):
         updated_repos = []
         
         for repo_config in self.repos_config:
             # Update repository
             if self.clone_or_update_repository(repo_config):
-                # Recompute embeddings if updated
-                self.compute_repository_embeddings(repo_config, embedding_model)
-                
                 # Update last updated timestamp
                 repo_config['last_updated'] = datetime.now().isoformat()
                 updated_repos.append(repo_config['name'])
+                self.build_vector_store()
         
         # Save updated configuration
         with open(self.config_path, 'w') as f:

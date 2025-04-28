@@ -19,12 +19,9 @@ def handle_query():
         if not query:
             return jsonify({"error": "No query provided"}), 400
         
-        retrieved_docs = rag_system.retrieve_relevant_documents(query)
-        response = rag_system.generate_response(query, retrieved_docs)
-        
+        response = rag_system.retrieve_relevant_documents(query)
         return jsonify({
             "query": query,
-            "retrieved_documents": retrieved_docs,
             "response": response
         })
     
@@ -56,13 +53,12 @@ def manage_repositories():
 @app.route('/knowledge_base', methods=['GET'])
 def get_knowledge_base():
     return jsonify({
-        "total_documents": len(rag_system.knowledge_base),
-        "sample_documents": rag_system.knowledge_base[:10]  # Return first 10 documents
+        "total_documents": len(rag_system.vector_store),
     })
 
 def main():
     print("Starting Integrated RAG System API Server...")
-    app.run(host='0.0.0.0', port=7860, debug=True)
+    app.run(host='0.0.0.0', port=7860, debug=False)
 
 if __name__ == '__main__':
     main()

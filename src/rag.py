@@ -3,15 +3,20 @@ import numpy as np
 import threading
 import logging
 from typing import List, Dict, Any
+from langchain_community.vectorstores import FAISS
+from langchain_openai.embeddings import OpenAIEmbeddings
+from langchain.chains import RetrievalQA
+from langchain_openai.llms import OpenAI
 
-# Import the previously created classes
+from dotenv import load_dotenv
+load_dotenv()
+
+
 from src.repoManagement import GitHubRepositoryManager
-from sentence_transformers import SentenceTransformer
-
 class IntegratedRAGSystem:
     def __init__(self, 
                  data_dir: str = './data',
-                 embedding_model: str = 'all-MiniLM-L6-v2',
+                 embedding_model: str = 'text-embedding-ada-002',
                  update_interval_hours: int = 24):
         """
         Initialize Integrated RAG System
@@ -24,123 +29,63 @@ class IntegratedRAGSystem:
                             format='%(asctime)s - %(levelname)s: %(message)s')
         self.logger = logging.getLogger(__name__)
         
-        self.repo_manager = GitHubRepositoryManager(
-            data_dir=data_dir
-        )
+        self.repo_manager = GitHubRepositoryManager(data_dir=data_dir)
+        self.repo_manager.dispatcher.on("new_vector_store", self.handle_new_vector_store)
         
-        self.embedding_model = SentenceTransformer(embedding_model)
-        self.knowledge_base = []
-        self.knowledge_embeddings = None
-        
-        self.repo_manager.update_repositories(self.embedding_model)
+        self.vector_store = self.load_vector_store()
+        self.retriever = self.initialize_qa_chain()
+
         self.refresh_knowledge_base()
-        
         self.start_background_updates(update_interval_hours)
+    
+    def handle_new_vector_store(self, vector_store: FAISS):
+        # especialy for updates
+        print("Event New vector store created")
+        self.vector_store = vector_store
+
+    def load_vector_store(self) -> FAISS:
+        """
+        Load the FAISS vector store from disk.
+        """
+        if os.path.exists(self.repo_manager.vector_store_path):
+            return FAISS.load_local(self.repo_manager.vector_store_path, OpenAIEmbeddings(), allow_dangerous_deserialization=True)
+        else:
+            return self.repo_manager.build_vector_store()
+    
+    def initialize_qa_chain(self) -> RetrievalQA:
+        """
+        Initialize the RetrievalQA chain using LangChain.
+        """
+        retriever = self.vector_store.as_retriever() if self.vector_store else None
+        #llm = OpenAI(model="gpt-4-turbo")
+        #return RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
+        return retriever
     
     def refresh_knowledge_base(self):
         try:
-            self.knowledge_base = []
-            
             for repo_config in self.repo_manager.repos_config:
-                repo_documents = self.repo_manager.extract_text_from_repository(repo_config['local_path'])
-                
-                for doc in repo_documents:
-                    self.knowledge_base.append({
-                        'source': doc['path'],
-                        'content': self.preprocess_text(doc['content'])
-                    })
-            
-            self.knowledge_embeddings = self.compute_knowledge_embeddings()
-            self.logger.info(f"Knowledge base refreshed. Total documents: {len(self.knowledge_base)}")
-        
+                self.repo_manager.clone_or_update_repository(repo_config)
+            self.logger.info(f"Knowledge base refreshed")
         except Exception as e:
             self.logger.error(f"Error refreshing knowledge base: {e}")
-    
-    def preprocess_text(self, text: str, max_length: int = 2000) -> str:
+
+    def retrieve_relevant_documents(self, query: str):
         """
-        Preprocess text for embedding and retrieval
+        Retrieve relevant documents 
+        """
+        try:
+            retrieved_docs = self.retriever.get_relevant_documents(query)
+            if not retrieved_docs:
+                self.logger.info("No relevant documents found")
+                return []
+            
+            # Generate response based on retrieved documents
+            response  = [doc.page_content for doc in retrieved_docs]
+            return response
         
-        :param text: Input text
-        :param max_length: Maximum length of text to keep
-        :return: Preprocessed text
-        """
-        text = ' '.join(text.split())
-        
-        return text[:max_length]
-    
-    def compute_knowledge_embeddings(self) -> np.ndarray:
-        """
-        Compute embeddings for knowledge base
-        
-        :return: NumPy array of embeddings
-        """
-        if not self.knowledge_base:
-            return np.array([])
-        
-        return np.array([
-            self.embedding_model.encode(entry['content'], show_progress_bar=False) 
-            for entry in self.knowledge_base
-        ])
-    
-    def retrieve_relevant_documents(self, query: str, top_k: int = 5) -> List[Dict[str, Any]]:
-        """
-        Retrieve most relevant documents based on embedding similarity
-        
-        :param query: User's input query
-        :param top_k: Number of top results to return
-        :return: List of most relevant documents
-        """
-        if len(self.knowledge_base) == 0 or self.knowledge_embeddings is None:
+        except Exception as e:
+            self.logger.error(f"Error retrieving documents: {e}")
             return []
-        
-        query_embedding = self.embedding_model.encode(query, show_progress_bar=False)
-        
-        similarities = np.dot(self.knowledge_embeddings, query_embedding) / (
-            np.linalg.norm(self.knowledge_embeddings, axis=1) * np.linalg.norm(query_embedding)
-        )
-        
-        top_indices = similarities.argsort()[-top_k:][::-1]
-        threshold = 0.2  # Define a similarity threshold
-        thr_top_indices = [i for i in similarities.argsort()[::-1] if similarities[i] >= threshold][:top_k]
-        for i in thr_top_indices:
-            print (f"Filename: {self.knowledge_base[i]['source']}, Index: {i}, Similarity: {similarities[i]}")
-        # print(f"Thresholded top indices: {thr_top_indices}")
-        # print(f"Similarities thresholded: {similarities[thr_top_indices]}")
-        # print(f"Top indices: {top_indices}")
-        # print(f"Similarities: {similarities[top_indices]}")
-
-        # get too 100
-        top100_indices = [i for i in similarities.argsort()[::-1] if similarities[i] >= threshold][:5] #similarities.argsort()[-1000:][::-1]
-        filenames = [self.knowledge_base[i]['source'] for i in top100_indices]
-
-        # check if any filename ends with .md and prind index and similarity
-        for i in range(len(filenames)):
-            if filenames[i].endswith('CHANGELOG.md'):
-                #print(f"############## --------->Filename: {filenames[i]}, Index: {top100_indices[i]}, Similarity: {similarities[top100_indices[i]]}")
-                thr_top_indices.append(top100_indices[i])           
-        
-        for i in thr_top_indices:
-            print (f"ADDED: Filename: {self.knowledge_base[i]['source']}, Index: {i}, Similarity: {similarities[i]}")
-        return [self.knowledge_base[i] for i in thr_top_indices]
-    
-    def generate_response(self, query: str, retrieved_docs: List[Dict[str, Any]]) -> str:
-        """
-        Generate a response based on retrieved documents
-        
-        :param query: User's input query
-        :param retrieved_docs: List of retrieved relevant documents
-        :return: Generated response
-        """
-        # Simple response generation strategy
-        if not retrieved_docs:
-            return ""
-        
-        context = "\n\n".join([
-            f"Source: {doc['source']}\nContent: {doc['content']}"
-            for doc in retrieved_docs
-        ])
-        
-        return context
     
     def start_background_updates(self, interval_hours: int = 24):
         def update_routine():
