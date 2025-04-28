@@ -56,7 +56,7 @@ class IntegratedRAGSystem:
         """
         Initialize the RetrievalQA chain using LangChain.
         """
-        retriever = self.vector_store.as_retriever(search_kwargs={"k": 3}) if self.vector_store else None
+        retriever = self.vector_store.as_retriever(search_kwargs={"k": 4}) if self.vector_store else None
         #llm = OpenAI(model="gpt-4-turbo")
         #return RetrievalQA.from_chain_type(llm=llm, retriever=retriever)
         return retriever
